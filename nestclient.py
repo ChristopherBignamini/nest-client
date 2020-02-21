@@ -1,5 +1,6 @@
 import nest
-from common import CustomPythonBrainLoader as BrainLoader # TODO: to be removed
+from common.loader import CustomPythonBrainLoader as BrainLoader # TODO: to be removed
+from common.devices import AbstractBrainDevice as AbstractBrainDevice
 
 # TODO: add exception handling
 # TODO: add input parameter check
@@ -9,8 +10,7 @@ class NestClient:
         
         self.__nest = nest
         
-        self.__generator_devices = []
-        self.__detector_devices = []
+        self.__devices = []
 
     # TODO: jochen why do we need to return a handler to the NEST instance?    
     def startup(self, resolution = 0.1, min_delay = 0.1, max_delay = 20.0, num_processes = 1, num_thread_per_process = 1): # TODO: maps to  initialize()
@@ -54,7 +54,7 @@ class NestClient:
         """
         self.__nest.Simulate(duration)
 
-    def create_device(type, **params): #TODO: maps to register_spike_sink/register_spike_source
+    def create_device(self, type, **params): #TODO: maps to register_spike_sink/register_spike_source
         """
         Create a device of the given type
         :param type: the type of device to create
@@ -62,8 +62,9 @@ class NestClient:
         :return a handle to the created device
         """
         # TODO: implement creation of NRP abstract device
-
-        node_id = self.__nest.Create(type, params)
+        device = type.create_new_device(**params)
+        self.__devices.append(device)
+        node_id = device.get_id()
         return node_id
 
     def connect_device(device, neurons_ids, **params): #TODO: maps to __register_device 
@@ -74,13 +75,37 @@ class NestClient:
         :param params: a dictionary of configuration parameters #TODO: to be removed, needed by current NRP implementation
         """
         # TODO: implement connection of NRP abstract device
+        
+        device.connect(neurons_ids)
 
-        if pre: # TODO: is there a way to find if a device is a spike gen o sink?
-            self.__nest.Connect(neurons_ids, device)
-        else:
-            self.__nest.Connect(device, neurons_ids)
+#    def delete_device(device): #TODO: maps to
+#        """
+#        Disconnect and delete a device from NEST and the neurons it was connected to
+#        :param device: the handle of the device to delete
+#        """
+#        self.__nest.???
 
-    def delete_device:
+#    def set_device_params(device, parameters): #TODO: maps to
+#        """
+#        Set new parameters for a device
+#        :param device: the device to set new parameters for
+#        :param parameters: the parameters to set for the device
+#        """
+#        self.__nest.SetStatus(device, parameters)
+
+#    def get_device_data(device): #TODO: maps to
+#        """
+#        Retrieve the data from a device
+#        :param device: The device to obtain data from
+#        :return nothing or device data as a dictionary
+#        """
+#        return self.__nest.GetStatus(device)
+
+#    def finalize(): #TODO: maps to
+#        """
+#        End the simulation by freeing all used resources and shutting down the NEST instance
+#        """
+#        pass
         
     def get_brain_root(self): #TODO: delete
         if(self.__brain_root):
